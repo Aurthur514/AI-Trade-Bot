@@ -128,8 +128,8 @@ def is_reversing_up(candles):
     
     Logic:
     1. Requires at least 4 candles for analysis
-    2. Checks for a downtrend in earlier candles (candles[-4] to candles[-2])
-    3. Checks for an uptrend signal in recent candles (candles[-2] to candles[-1])
+    2. Checks for a downtrend: 2 consecutive declining closes (candles[-4] to candles[-2])
+    3. Checks for an uptrend reversal: last candle closes higher than the previous candle
     
     Returns True if a reversal is detected, False otherwise.
     """
@@ -139,17 +139,15 @@ def is_reversing_up(candles):
     # Extract close prices for the last 4 candles
     closes = [float(candle[4]) for candle in candles[-4:]]
     
-    # Check for downtrend: at least 2 consecutive declining closes
+    # Check for downtrend: 2 consecutive declining closes
+    # closes[0] > closes[1] > closes[2] means prices were falling
     downtrend_detected = closes[0] > closes[1] and closes[1] > closes[2]
     
-    # Check for reversal: last 2 candles showing upward movement
-    reversal_detected = closes[2] < closes[3]
+    # Check for reversal: last candle closes higher than the previous candle
+    reversal_detected = closes[3] > closes[2]
     
-    # Confirm reversal with momentum: last candle should be higher than second-to-last
-    # and ideally breaking above the previous low point
-    strong_reversal = closes[3] > closes[2] and closes[3] > closes[1]
-    
-    return downtrend_detected and reversal_detected and strong_reversal
+    # Both conditions must be true for a valid reversal signal
+    return downtrend_detected and reversal_detected
 
 # --- STEP 6: Place Limit Order ---
 def place_order(symbol, price, qty):
