@@ -106,7 +106,8 @@ def get_trade_info(symbol):
 def get_recent_candles(symbol):
     endpoint = "/trade/api/v2/candles"
     end_time = int(time.time() * 1000)
-    start_time = end_time - (15 * 60 * 1000 * 3)
+    # Fetch more candles for better trend analysis (5 candles = 75 minutes)
+    start_time = end_time - (15 * 60 * 1000 * 5)
     params = {
         "symbol": symbol,
         "exchange": EXCHANGE,
@@ -122,11 +123,33 @@ def get_recent_candles(symbol):
 
 # --- STEP 5: Trend reversal check ---
 def is_reversing_up(candles):
-    if len(candles) < 2:
+    """
+    Detects a trend reversal from downtrend to uptrend.
+    
+    Logic:
+    1. Requires at least 4 candles for analysis
+    2. Checks for a downtrend in earlier candles (candles[-4] to candles[-2])
+    3. Checks for an uptrend signal in recent candles (candles[-2] to candles[-1])
+    
+    Returns True if a reversal is detected, False otherwise.
+    """
+    if len(candles) < 4:
         return False
-    last = candles[-1][4]
-    prev = candles[-2][4]
-    return float(last) > float(prev)
+    
+    # Extract close prices for the last 4 candles
+    closes = [float(candle[4]) for candle in candles[-4:]]
+    
+    # Check for downtrend: at least 2 consecutive declining closes
+    downtrend_detected = closes[0] > closes[1] and closes[1] > closes[2]
+    
+    # Check for reversal: last 2 candles showing upward movement
+    reversal_detected = closes[2] < closes[3]
+    
+    # Confirm reversal with momentum: last candle should be higher than second-to-last
+    # and ideally breaking above the previous low point
+    strong_reversal = closes[3] > closes[2] and closes[3] > closes[1]
+    
+    return downtrend_detected and reversal_detected and strong_reversal
 
 # --- STEP 6: Place Limit Order ---
 def place_order(symbol, price, qty):
