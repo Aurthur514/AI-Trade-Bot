@@ -22,6 +22,9 @@ TRADE_PERCENT_OF_BALANCE = 0.9
 REQUEST_TIMEOUT = 5
 MAX_COINS_TO_PROCESS = 15
 
+# Candle data structure indices
+CLOSE_PRICE_INDEX = 4  # Index of close price in candle data [timestamp, open, high, low, close, volume]
+
 # --- UTILS ---
 def safe_get(url, headers, params=None):
     retries = 3
@@ -128,7 +131,7 @@ def is_reversing_up(candles):
     
     Logic:
     1. Requires at least 4 candles for analysis
-    2. Checks for a downtrend: 2 consecutive declining closes (candles[-4] to candles[-2])
+    2. Checks for a downtrend: 2 consecutive price declines across 3 candles (candles[-4] to candles[-2])
     3. Checks for an uptrend reversal: last candle closes higher than the previous candle
     
     Returns True if a reversal is detected, False otherwise.
@@ -137,9 +140,9 @@ def is_reversing_up(candles):
         return False
     
     # Extract close prices for the last 4 candles
-    closes = [float(candle[4]) for candle in candles[-4:]]
+    closes = [float(candle[CLOSE_PRICE_INDEX]) for candle in candles[-4:]]
     
-    # Check for downtrend: 2 consecutive declining closes
+    # Check for downtrend: 2 consecutive price declines across 3 candles
     # closes[0] > closes[1] > closes[2] means prices were falling
     downtrend_detected = closes[0] > closes[1] and closes[1] > closes[2]
     
