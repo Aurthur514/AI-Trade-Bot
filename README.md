@@ -4,7 +4,10 @@ This is an auto-trading bot for the CoinSwitch PRO platform. It uses a trend-rev
 
 ## Features
 
--   **Trend-Reversal Strategy:** The bot identifies potential buy opportunities by checking for trend reversals in recent candle data.
+-   **Trend-Reversal Strategy:** The bot identifies potential buy opportunities by detecting trend reversals from downtrend to uptrend patterns. It analyzes at least 4 recent candles to:
+    - Detect a downtrend pattern (2+ consecutive declining candles)
+    - Identify reversal signals (upward price movement)
+    - Confirm strong reversal momentum before executing trades
 -   **Secure Configuration:** API keys are managed securely using environment variables, not hardcoded in the script.
 -   **Error Handling:** The bot includes retries for API requests and handles potential errors gracefully.
 

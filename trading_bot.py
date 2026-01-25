@@ -22,6 +22,9 @@ TRADE_PERCENT_OF_BALANCE = 0.9
 REQUEST_TIMEOUT = 5
 MAX_COINS_TO_PROCESS = 15
 
+# Candle data structure indices
+CLOSE_PRICE_INDEX = 4  # Index of close price in candle data [timestamp, open, high, low, close, volume]
+
 # --- UTILS ---
 def safe_get(url, headers, params=None):
     retries = 3
@@ -106,7 +109,8 @@ def get_trade_info(symbol):
 def get_recent_candles(symbol):
     endpoint = "/trade/api/v2/candles"
     end_time = int(time.time() * 1000)
-    start_time = end_time - (15 * 60 * 1000 * 3)
+    # Fetch more candles for better trend analysis (5 candles = 75 minutes)
+    start_time = end_time - (15 * 60 * 1000 * 5)
     params = {
         "symbol": symbol,
         "exchange": EXCHANGE,
@@ -122,11 +126,31 @@ def get_recent_candles(symbol):
 
 # --- STEP 5: Trend reversal check ---
 def is_reversing_up(candles):
-    if len(candles) < 2:
+    """
+    Detects a trend reversal from downtrend to uptrend.
+    
+    Logic:
+    1. Requires at least 4 candles for analysis
+    2. Checks for a downtrend: 2 consecutive price declines across 3 candles (candles[-4] to candles[-2])
+    3. Checks for an uptrend reversal: last candle closes higher than the previous candle
+    
+    Returns True if a reversal is detected, False otherwise.
+    """
+    if len(candles) < 4:
         return False
-    last = candles[-1][4]
-    prev = candles[-2][4]
-    return float(last) > float(prev)
+    
+    # Extract close prices for the last 4 candles
+    closes = [float(candle[CLOSE_PRICE_INDEX]) for candle in candles[-4:]]
+    
+    # Check for downtrend: 2 consecutive price declines across 3 candles
+    # closes[0] > closes[1] > closes[2] means prices were falling
+    downtrend_detected = closes[0] > closes[1] and closes[1] > closes[2]
+    
+    # Check for reversal: last candle closes higher than the previous candle
+    reversal_detected = closes[3] > closes[2]
+    
+    # Both conditions must be true for a valid reversal signal
+    return downtrend_detected and reversal_detected
 
 # --- STEP 6: Place Limit Order ---
 def place_order(symbol, price, qty):
